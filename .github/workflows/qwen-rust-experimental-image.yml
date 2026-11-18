@@ -1,0 +1,80 @@
+name: Qwen Rust experimental image
+
+on:
+  push:
+    branches:
+      - litellm_qwen_native_chat_experiment
+    paths:
+      - Dockerfile.qwen-rust
+      - litellm/rust_bridge/catalog.py
+      - cookbook/litellm_proxy_server/rust_openai_like.yaml
+      - .github/workflows/qwen-rust-experimental-image.yml
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: qwen-rust-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.repository == 'nishi252003/litellm' && github.ref == 'refs/heads/litellm_qwen_native_chat_experiment'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/nishi252003/litellm-qwen-rust
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          persist-credentials: false
+
+      - name: Build experimental image
+        run: |
+          set -euo pipefail
+          docker build --pull --platform linux/amd64 \
+            -f Dockerfile.qwen-rust -t "$IMAGE:$GITHUB_SHA" .
+
+      - name: Verify native extension and provider policy
+        run: |
+          set -euo pipefail
+          docker run --rm --network none \
+            --entrypoint /app/.venv/bin/python "$IMAGE:$GITHUB_SHA" -c '
+          from importlib.metadata import version
+          from litellm.rust_bridge.catalog import Route, RouteContext, decision
+          from litellm.rust_bridge.configuration import Decision
+          from litellm.rust_bridge.loader import native_bridge_available
+          assert version("litellm") == "1.105.1"
+          assert native_bridge_available(), "Rust extension missing"
+          assert decision(RouteContext(Route.CHAT_COMPLETIONS, provider="openai_like")) is Decision.RUST_WITH_FALLBACK
+          assert decision(RouteContext(Route.CHAT_COMPLETIONS, provider="openai")) is Decision.PYTHON
+          print("PASS: native extension loads and experimental policy is scoped to openai_like")
+          '
+
+      - name: Authenticate to GHCR
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" |
+            docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish image and record digest
+        run: |
+          set -euo pipefail
+          docker push "$IMAGE:$GITHUB_SHA"
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE:$GITHUB_SHA")
+          {
+            printf '## Experimental Qwen Rust image\n\n'
+            printf 'Commit: `%s`\n\n' "$GITHUB_SHA"
+            printf 'Deploy by digest: `%s`\n\n' "$digest"
+            printf 'Native extension import and policy checks passed. No deployment was performed.\n'
+            printf 'Real-model HTTP verification is still required for this built image.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Log out of GHCR
+        if: always()
+        run: docker logout ghcr.io

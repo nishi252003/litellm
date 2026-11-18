@@ -8,6 +8,10 @@ Python still runs the HTTP proxy, authentication, router, and callback boundary.
 
 ## Run in an isolated environment
 
+The fork's `Qwen Rust experimental image` workflow builds `Dockerfile.qwen-rust` on pushes to `litellm_qwen_native_chat_experiment` that change the Dockerfile, rollout policy, sample configuration, or workflow. Enable GitHub Actions in the fork before pushing if GitHub has disabled inherited workflows. It uses the built-in `GITHUB_TOKEN` with package-write permission; no personal token is stored in this repository
+
+The workflow publishes `ghcr.io/nishi252003/litellm-qwen-rust:<full-commit-sha>` only after checking the extension import and provider policy. Its run summary contains the immutable image digest to use for a separate test deployment. The checks do not contact a model or deploy to Kubernetes. Ensure the cluster can pull the GHCR package before deploying, using an approved image-pull secret if it is private
+
 Use this branch's Python package together with the compiled v1.105.1 extension. A source checkout without the extension cannot run this experiment. Keep the existing Helm release, database, and PR #77 unchanged
 
 The sample uses the backend model name `qwen2-5-coder-14b`, exposed by the proxy as `qwen-native-test`. Adjust the model name in the sample for a different deployment. Point `QWEN_API_BASE` at an already running vLLM service, including its `/v1` suffix. The sample's `unused` backend API key is only appropriate for a backend that does not require authentication
