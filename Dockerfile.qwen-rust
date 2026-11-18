@@ -1,0 +1,10 @@
+FROM ghcr.io/berriai/litellm@sha256:b7b9e2c306343721802253d0dd9436b9634a2eb4e14da7c7cf06c5c7b7530802
+
+COPY litellm/rust_bridge/catalog.py /app/.venv/lib/python3.13/site-packages/litellm/rust_bridge/catalog.py
+COPY cookbook/litellm_proxy_server/rust_openai_like.yaml /app/qwen-rust-config.yaml
+
+ENV LITELLM_RUST=true \
+    LITELLM_LOCAL_MODEL_COST_MAP=True
+
+ENTRYPOINT ["/app/.venv/bin/python", "-c", "from litellm.proxy.proxy_cli import run_server; run_server()"]
+CMD ["--host", "0.0.0.0", "--port", "4000", "--config", "/app/qwen-rust-config.yaml", "--num_workers", "1"]
