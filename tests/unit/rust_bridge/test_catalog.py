@@ -29,7 +29,9 @@ def isolated_configuration(monkeypatch: pytest.MonkeyPatch) -> Generator[None]:
 
 
 @pytest.mark.parametrize("route", tuple(Route))
-@pytest.mark.parametrize("provider", (None, "bedrock", "mistral", "anthropic", "openai", "azure_ai", "unknown"))
+@pytest.mark.parametrize(
+    "provider", (None, "bedrock", "mistral", "anthropic", "openai", "openai_like", "azure_ai", "unknown")
+)
 @pytest.mark.parametrize("process", (None, False, True))
 @pytest.mark.parametrize("environment", (None, "0", "1"))
 def test_shipped_decisions(
@@ -47,7 +49,9 @@ def test_shipped_decisions(
     if route is Route.OCR or (route is Route.TRANSCRIPTION and provider == "bedrock"):
         assert catalog.rollout(context) is Rollout.RUST_REQUIRED
         assert catalog.decision(context) is Decision.RUST_REQUIRED
-    elif route is Route.MESSAGES and provider == "anthropic":
+    elif (route is Route.MESSAGES and provider == "anthropic") or (
+        route is Route.CHAT_COMPLETIONS and provider == "openai_like"
+    ):
         assert catalog.rollout(context) is Rollout.RUST_OPT_IN
         opted_in: Final = environment == "1" or (environment is None and process is True)
         assert catalog.decision(context) is (Decision.RUST_WITH_FALLBACK if opted_in else Decision.PYTHON)

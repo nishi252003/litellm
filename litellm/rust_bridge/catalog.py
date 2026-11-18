@@ -82,6 +82,7 @@ Rules: TypeAlias = tuple[Rule, ...]
 
 RULES: Final[Rules] = (
     LoggerRule(Rollout.RUST_OPT_IN),
+    RouteRule(Route.CHAT_COMPLETIONS, Rollout.RUST_OPT_IN, providers=frozenset({"openai_like"})),
     RouteRule(Route.CHAT_COMPLETIONS, Rollout.PYTHON_ONLY),
     RouteRule(Route.EMBEDDINGS, Rollout.PYTHON_ONLY),
     RouteRule(Route.OCR, Rollout.RUST_REQUIRED),

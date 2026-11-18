@@ -1,0 +1,15 @@
+model_list:
+  - model_name: qwen-native-test
+    litellm_params:
+      model: openai_like/qwen2-5-coder-14b
+      custom_llm_provider: openai_like
+      api_base: os.environ/QWEN_API_BASE
+      api_key: unused
+
+litellm_settings:
+  cache: false
+  set_verbose: false
+  turn_off_message_logging: true
+
+router_settings:
+  num_retries: 0
