@@ -6,6 +6,7 @@ on:
       - litellm_qwen_native_chat_experiment
     paths:
       - Dockerfile.qwen-rust
+      - Dockerfile.qwen-rust.dockerignore
       - litellm/rust_bridge/catalog.py
       - cookbook/litellm_proxy_server/rust_openai_like.yaml
       - .github/workflows/qwen-rust-experimental-image.yml

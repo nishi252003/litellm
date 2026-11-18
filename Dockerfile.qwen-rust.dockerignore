@@ -1,0 +1,8 @@
+**
+!Dockerfile.qwen-rust
+!litellm/
+!litellm/rust_bridge/
+!litellm/rust_bridge/catalog.py
+!cookbook/
+!cookbook/litellm_proxy_server/
+!cookbook/litellm_proxy_server/rust_openai_like.yaml
